@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: Auth-Route-Services
+logging:
+  level:
+    ROOT: INFO
+    io.pivotal.poc.bac: DEBUG
