@@ -1,1 +1,15 @@
 # auth-route-service
+
+## To Deploy
+* Build the application - `mvn clean package`
+* Push the application to cloudfoundry - `cf push`
+* Create the route service - `cf create-user-provided-service auth -r https://auth.$YOUR_CF_APPS_DOMAIN/auth`
+* Bind the route service into your application - `cf bind-route-service $YOUR_CF_APPS_DOMAIN auth -n $HOSTNAME_OF_APP_TO_PROTECT`
+* Invoke the application that has the route service bound to its route.  You should see logs appear in the auth route service application logs.  
+For example:
+~~~~
+2017-06-22T16:16:53.37-0400 [APP/PROC/WEB/0] OUT 2017-06-22 20:16:53.374 DEBUG 18 --- [io-8080-exec-10] i.p.p.b.a.RouteServiceController         : Incoming Request: <GET http://auth.apps.cloud.zwickey.net/auth,{host=[auth.apps.cloud.zwickey.net], user-agent=[Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36], accept=[*/*], accept-encoding=[gzip, deflate, sdch], accept-language=[en-US,en;q=0.8], referer=[http://volume-demo.apps.cloud.zwickey.net/], x-b3-spanid=[93341064686b2ba5], x-b3-traceid=[93341064686b2ba5], x-cf-applicationid=[ca69f5f0-dfe4-4fe4-9047-be7a03c92133], x-cf-forwarded-url=[https://volume-demo.apps.cloud.zwickey.net/files], x-cf-instanceid=[d133bb5b-1f05-44bc-72d7-4bcb], x-cf-instanceindex=[0], x-cf-proxy-metadata=[eyJub25jZSI6Ijh6Vmsxc1FoWEpqTW1ySmEifQ==], x-cf-proxy-signature=[iA866TDEEZsDSKmJetYKSR1ngfSHVIGFlYg9XsBV3UXuXwCZhx4YhJZzQ0z3rOZcvFaTicmERRksY7UBdc5R7wso2vsuvud5KkHjBPpdg_9JafOiE_GM6s4GdBZgjTzPL29U9IB5GJcWESGMBJoHkXWqTMIYuMGEcc5seYDPUQOtrE81kw==], connection=[close], x-forwarded-proto=[http], x-request-start=[1498162613355], x-requested-with=[XMLHttpRequest], x-vcap-request-id=[10ef4f4f-eb0f-407a-6466-3d1be425c77d]}>
+2017-06-22T16:16:53.38-0400 [APP/PROC/WEB/0] OUT 2017-06-22 20:16:53.375  INFO 18 --- [io-8080-exec-10] i.p.p.b.a.RouteServiceController         : Request not authenticated, logging into SiteMinder.
+2017-06-22T16:16:53.39-0400 [APP/PROC/WEB/0] OUT 2017-06-22 20:16:53.387 DEBUG 18 --- [io-8080-exec-10] i.p.p.b.a.RouteServiceController         : Outgoing Request: <GET https://volume-demo.apps.cloud.zwickey.net/files,{host=[auth.apps.cloud.zwickey.net], user-agent=[Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36], accept=[*/*], accept-encoding=[gzip, deflate, sdch], accept-language=[en-US,en;q=0.8], referer=[http://volume-demo.apps.cloud.zwickey.net/], x-b3-spanid=[93341064686b2ba5], x-b3-traceid=[93341064686b2ba5], x-cf-applicationid=[ca69f5f0-dfe4-4fe4-9047-be7a03c92133], x-cf-instanceid=[d133bb5b-1f05-44bc-72d7-4bcb], x-cf-instanceindex=[0], x-cf-proxy-metadata=[eyJub25jZSI6Ijh6Vmsxc1FoWEpqTW1ySmEifQ==], x-cf-proxy-signature=[iA866TDEEZsDSKmJetYKSR1ngfSHVIGFlYg9XsBV3UXuXwCZhx4YhJZzQ0z3rOZcvFaTicmERRksY7UBdc5R7wso2vsuvud5KkHjBPpdg_9JafOiE_GM6s4GdBZgjTzPL29U9IB5GJcWESGMBJoHkXWqTMIYuMGEcc5seYDPUQOtrE81kw==], connection=[close], x-forwarded-proto=[http], x-request-start=[1498162613355], x-requested-with=[XMLHttpRequest], x-vcap-request-id=[10ef4f4f-eb0f-407a-6466-3d1be425c77d]}>
+
+~~~~
