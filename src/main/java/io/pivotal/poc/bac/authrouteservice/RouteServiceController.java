@@ -41,7 +41,7 @@ public class RouteServiceController {
         LOG.debug("Incoming Request: {}", incoming);
 
         String smCookie = null;
-        if(!obtainCookie(incoming)) {
+        if(obtainCookie(incoming)) {
             LOG.info("Request not authenticated, logging into SiteMinder.");
             RequestEntity<?> cookieReq = getCookieRequest(incoming.getHeaders());
             LOG.debug("Login Cookie Request: {}", cookieReq);

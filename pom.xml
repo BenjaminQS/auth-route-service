@@ -38,7 +38,7 @@
 			<artifactId>sm-sdk</artifactId>
 			<version>12.52.1</version>
 			<scope>system</scope>
-			<systemPath>${project.basedir}/src/main/resources/extra-jars/smjavaagentapi.jar</systemPath>
+			<systemPath>${project.basedir}/src/main/resources/extra-jars/smagentapi.jar</systemPath>
 		</dependency>
 
 		<dependency>

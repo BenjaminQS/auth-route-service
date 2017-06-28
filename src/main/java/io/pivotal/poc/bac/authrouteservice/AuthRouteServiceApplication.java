@@ -1,6 +1,7 @@
 package io.pivotal.poc.bac.authrouteservice;
 
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.client.ClientHttpResponse;
@@ -25,6 +26,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 @SpringBootApplication
+@EnableAutoConfiguration
 public class AuthRouteServiceApplication {
 
 	public static void main(String[] args) {

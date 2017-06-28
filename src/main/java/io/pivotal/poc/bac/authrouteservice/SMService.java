@@ -3,31 +3,39 @@ package io.pivotal.poc.bac.authrouteservice;
 import netegrity.siteminder.javaagent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
 
 import java.net.URI;
 
 /**
  * Created by azwickey on 6/28/17.
  */
-@Component
-@Configuration
-public class SMService {
+@Controller
+public class SMService implements InitializingBean {
 
     Logger LOG = LoggerFactory.getLogger(SMService.class);
 
     private final AgentAPI _api = new AgentAPI();
-    @Value("${sm.ip:127.0.0.1}") private String _policy_ip;
-    @Value("${sm.agent.hostname:localhost}") private String _agentHostName;
-    @Value("${sm.agent.sharedSecret:abz123}") private String _sharedSecret;
+    @Value("${sm.ip}")
+    private String _policyIp;
+    @Value("${sm.agent.hostname}")
+    private String _agentHostName;
+    @Value("${sm.agent.sharedSecret}")
+    private String _sharedSecret;
 
-
-    public SMService() {
+    public void afterPropertiesSet() throws Exception {
         ServerDef sd = new ServerDef();
-        sd.serverIpAddress = _policy_ip;
+        sd.serverIpAddress = _policyIp;
+        sd.connectionMax = 10;
+        sd.connectionMin = 1;
+        sd.timeout = 10;
         _api.init(new InitDef( _agentHostName, _sharedSecret, false, sd));
         LOG.info("SM Agent initialized: " + _api.toString());
     }
@@ -36,19 +44,32 @@ public class SMService {
         LOG.debug("Validating cookie [" + authCokie + "]");
         int rc = _api.decodeSSOToken(authCokie, new TokenDescriptor(0,true), new AttributeList(), false, new StringBuffer());
         LOG.debug("Decode return code: "+ rc);
-        return (AgentAPI.SUCCESS == rc) ? true : false;
+        switch (rc) {
+            case AgentAPI.SUCCESS:
+                return true;
+            case AgentAPI.FAILURE:
+                return false;
+            default: throw new RuntimeException("Error Occurred Checking if decoding cookie; ReturnCode: " + rc);
+        }
     }
 
     public boolean isProtected(URI uri, HttpMethod method) {
         LOG.debug("Checking if URI [" + uri + "[ is protected");
         int rc = _api.isProtected(_agentHostName, new ResourceContextDef(
                 _agentHostName,
-                _policy_ip,
+                _policyIp,
                 uri.getPath(),
                 method.name()),
                 new RealmDef());
         LOG.debug("IsProtected return code: "+ rc);
-        return (AgentAPI.YES == rc) ? true : false;
+        switch (rc) {
+            case AgentAPI.YES:
+                return true;
+            case AgentAPI.NO:
+                return false;
+            default: throw new RuntimeException("Error Occurred Checking if resource is protected; ReturnCode: " + rc);
+
+        }
     }
 
 }
