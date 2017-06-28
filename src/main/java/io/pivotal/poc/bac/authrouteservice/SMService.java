@@ -5,11 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 
 import java.net.URI;
@@ -55,12 +51,13 @@ public class SMService implements InitializingBean {
 
     public boolean isProtected(URI uri, HttpMethod method) {
         LOG.debug("Checking if URI [" + uri + "[ is protected");
-        int rc = _api.isProtected(_agentHostName, new ResourceContextDef(
-                _agentHostName,
-                _policyIp,
-                uri.getPath(),
-                method.name()),
-                new RealmDef());
+        int rc = _api.isProtected(_agentHostName,
+                new ResourceContextDef(
+                    _agentHostName,
+                    _policyIp,
+                    uri.getPath(),
+                    method.name()),
+                    new RealmDef());
         LOG.debug("IsProtected return code: "+ rc);
         switch (rc) {
             case AgentAPI.YES:
@@ -71,5 +68,4 @@ public class SMService implements InitializingBean {
 
         }
     }
-
 }
