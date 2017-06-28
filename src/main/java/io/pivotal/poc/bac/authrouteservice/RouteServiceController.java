@@ -25,7 +25,7 @@ public class RouteServiceController {
     Logger LOG = LoggerFactory.getLogger(RouteServiceController.class);
 
     public static final String TARGET_URL = "X-CF-Forwarded-Url";
-    public static final String AUTH_COOKIE = "sm-auth-cookie";
+    public static final String AUTH_COOKIE = "SMSESSION";
 
     @Value("${login.url:https://pivotal.io/}")
     private String _loginTarget;
@@ -33,34 +33,39 @@ public class RouteServiceController {
     @Autowired
     private RestOperations _rs;
 
+    @Autowired
+    private SMService _sm;
+
     @RequestMapping("auth")
     public ResponseEntity<?> service(RequestEntity<byte[]> incoming) {
         LOG.debug("Incoming Request: {}", incoming);
 
-        if(!hasValidCookie(incoming.getHeaders())) {
+        String smCookie = null;
+        if(!obtainCookie(incoming)) {
             LOG.info("Request not authenticated, logging into SiteMinder.");
-            //TODO -- make request to login.aspx site
-            RequestEntity<?> cookieReq = getCookieRequest();
+            RequestEntity<?> cookieReq = getCookieRequest(incoming.getHeaders());
             LOG.debug("Login Cookie Request: {}", cookieReq);
             ResponseEntity<byte[]> cookieResp = _rs.exchange(cookieReq, byte[].class);
             LOG.debug("Login Cookie Response: {}", cookieResp);
-
-            //TODO -- validate req/resp was successful and pull off auth cookie
+            smCookie = cookieResp.getHeaders().getFirst(AUTH_COOKIE);
         }
 
-        RequestEntity<?> outgoing = getOutgoingRequest(incoming, "abcd1243-cookie");
+        RequestEntity<?> outgoing = getOutgoingRequest(incoming, smCookie);
         LOG.debug("Outgoing Request: {}", outgoing);
 
         return _rs.exchange(outgoing, byte[].class);
     }
 
-    private boolean hasValidCookie(HttpHeaders headers) {
-        if(headers.containsKey(AUTH_COOKIE)) {
-            //TODO Validate with SiteMinder
-            return true;
-        } else {
-            return false;
+    private boolean obtainCookie(RequestEntity<byte[]> incoming) {
+        if(_sm.isProtected(incoming.getUrl(), incoming.getMethod())) {
+            LOG.debug("Resource is protected, validating cookie");
+            boolean validCookie = false;
+            if(incoming.getHeaders().containsKey(AUTH_COOKIE) && _sm.isValid(incoming.getHeaders().getFirst(AUTH_COOKIE))) {
+                validCookie =  true;
+            }
+            return validCookie;
         }
+        return false;
     }
 
     private RequestEntity<?> getOutgoingRequest(RequestEntity<byte[]> incoming, String authCookie) {
@@ -76,11 +81,10 @@ public class RouteServiceController {
         }
     }
 
-    private RequestEntity<?> getCookieRequest() {
-        HttpHeaders headers = new HttpHeaders();
+    private RequestEntity<?> getCookieRequest(HttpHeaders headers) {
+        HttpHeaders h = new HttpHeaders();
         //Add headers to auth the user
-        //headers.put(AUTH_COOKIE, Arrays.asList(authCookie));
-
-        return new RequestEntity<byte[]>(headers, HttpMethod.GET, URI.create(_loginTarget));
+        h.putAll(headers);
+        return new RequestEntity<byte[]>(h, HttpMethod.GET, URI.create(_loginTarget));
     }
 }

@@ -5,3 +5,10 @@ logging:
   level:
     ROOT: INFO
     io.pivotal.poc.bac: DEBUG
+login:
+  url: https://pivotal.io/
+sm:
+  ip: 192.168.1.100
+  agent:
+    hostname: pivotal-cf
+    sharedSecret: topsecret

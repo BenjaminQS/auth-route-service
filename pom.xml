@@ -33,6 +33,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.ca.siteminder</groupId>
+			<artifactId>sm-sdk</artifactId>
+			<version>12.52.1</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/src/main/resources/extra-jars/smjavaagentapi.jar</systemPath>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -46,8 +53,20 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<includeSystemScope>true</includeSystemScope>
+				</configuration>
 			</plugin>
 		</plugins>
+		<testSourceDirectory>src/test/java</testSourceDirectory>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<excludes>
+					<exclude>**/*.jar</exclude>
+				</excludes>
+			</resource>
+		</resources>
 	</build>
 
 
