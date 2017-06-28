@@ -40,6 +40,13 @@
 			<scope>system</scope>
 			<systemPath>${project.basedir}/src/main/resources/extra-jars/smagentapi.jar</systemPath>
 		</dependency>
+		<dependency>
+			<groupId>rsa.crypto</groupId>
+			<artifactId>rsa-jce</artifactId>
+			<version>12.52.1</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/src/main/resources/extra-jars/cryptoj.jar</systemPath>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
