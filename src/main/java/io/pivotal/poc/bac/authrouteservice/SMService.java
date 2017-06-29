@@ -34,6 +34,9 @@ public class SMService implements InitializingBean {
         sd.timeout = 10;
         _api.init(new InitDef( _agentHostName, _sharedSecret, false, sd));
         LOG.info("SM Agent initialized: " + _api.toString());
+        LOG.info("\tSM Agent hostname: " +  _agentHostName);
+        LOG.info("\tSM Agent Policy Server IP: " + _policyIp);
+        LOG.info("\tSM Agent shared secret: " + _sharedSecret);
     }
 
     public boolean isValid(String authCokie) {
@@ -50,7 +53,7 @@ public class SMService implements InitializingBean {
     }
 
     public boolean isProtected(URI uri, HttpMethod method) {
-        LOG.debug("Checking if URI [" + uri + "[ is protected");
+        LOG.debug("Checking if URI [" + uri + "] is protected");
         int rc = _api.isProtected(_agentHostName,
                 new ResourceContextDef(
                     _agentHostName,
