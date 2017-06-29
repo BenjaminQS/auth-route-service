@@ -54,7 +54,7 @@ public class SMService implements InitializingBean {
         int rc = _api.isProtected(_agentHostName,
                 new ResourceContextDef(
                     _agentHostName,
-                    _policyIp,
+                    "Cloudfoundry",
                     uri.getPath(),
                     method.name()),
                     new RealmDef());
