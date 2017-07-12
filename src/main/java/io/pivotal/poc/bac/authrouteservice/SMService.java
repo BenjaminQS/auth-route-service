@@ -32,8 +32,9 @@ public class SMService implements InitializingBean {
         sd.connectionMax = 10;
         sd.connectionMin = 1;
         sd.timeout = 10;
-        _api.init(new InitDef( _agentHostName, _sharedSecret, false, sd));
+        int result = _api.init(new InitDef( _agentHostName, _sharedSecret, false, sd));
         LOG.info("SM Agent initialized: " + _api.toString());
+        LOG.info("SM Agent initialization return code: " + result);
         LOG.info("\tSM Agent hostname: " +  _agentHostName);
         LOG.info("\tSM Agent Policy Server IP: " + _policyIp);
         LOG.info("\tSM Agent shared secret: " + _sharedSecret);
