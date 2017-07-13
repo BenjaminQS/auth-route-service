@@ -32,6 +32,8 @@ public class SMService implements InitializingBean {
     private String _policyPwd;
     @Value("${sm.agent.name}")
     private String _agent;
+    @Value("${sm.hostconfig}")
+    private String _hc;
 
     public void afterPropertiesSet() throws Exception {
 
@@ -57,7 +59,7 @@ public class SMService implements InitializingBean {
         String address = _policyIp;
         String filename = "smhost.conf";
         String hostname = _agentHostName;
-        String hostconfig = "pcf-crc";
+        String hostconfig = _hc;
         String username = _policyUsername;
         String password = _policyPwd;
         boolean bRollover = false;
