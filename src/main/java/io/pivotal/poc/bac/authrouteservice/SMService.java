@@ -54,7 +54,7 @@ public class SMService implements InitializingBean {
 
         String address = _policyIp;
         String filename = "smhost.conf";
-        String hostname = "_agentHostName";
+        String hostname = _agentHostName;
         String hostConfig = "hostConfig";
         String username = _policyUsername;
         String password = _policyPwd;
