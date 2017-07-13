@@ -4,10 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestOperations;
@@ -25,7 +22,7 @@ public class RouteServiceController {
     Logger LOG = LoggerFactory.getLogger(RouteServiceController.class);
 
     public static final String TARGET_URL = "X-CF-Forwarded-Url";
-    public static final String AUTH_COOKIE = "SMSESSION";
+    public static final String AUTH_COOKIE = "SM_SESSION";
 
     @Value("${login.url:https://pivotal.io/}")
     private String _loginTarget;
@@ -35,6 +32,13 @@ public class RouteServiceController {
 
     @Autowired
     private SMService _sm;
+
+    @RequestMapping("cookie")
+    public HttpEntity<String> fakeCookie(RequestEntity<byte[]> incoming) {
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.set(AUTH_COOKIE, "FakeCookie");
+        return new HttpEntity<String>("Hello World", responseHeaders);
+    }
 
     @RequestMapping("auth")
     public ResponseEntity<?> service(RequestEntity<byte[]> incoming) {
@@ -46,12 +50,15 @@ public class RouteServiceController {
         }
 
         String smCookie = null;
-        if(obtainCookie(incoming, target)) {
+        if(!validCookie(incoming, URI.create(target).getPath())) {
             LOG.info("Request not authenticated, logging into SiteMinder.");
             RequestEntity<?> cookieReq = getCookieRequest(incoming.getHeaders());
             LOG.debug("Login Cookie Request: {}", cookieReq);
             ResponseEntity<byte[]> cookieResp = _rs.exchange(cookieReq, byte[].class);
             LOG.debug("Login Cookie Response: {}", cookieResp);
+            if(cookieResp.getStatusCode() != HttpStatus.OK) {
+                return new ResponseEntity<String>("User Not Authorized", new HttpHeaders(), HttpStatus.FORBIDDEN);
+            }
             smCookie = cookieResp.getHeaders().getFirst(AUTH_COOKIE);
         }
 
@@ -61,7 +68,7 @@ public class RouteServiceController {
         return _rs.exchange(outgoing, byte[].class);
     }
 
-    private boolean obtainCookie(RequestEntity<byte[]> incoming, String target) {
+    private boolean validCookie(RequestEntity<byte[]> incoming, String target) {
         if(_sm.isProtected(target, incoming.getMethod())) {
             LOG.debug("Resource is protected, validating cookie");
             boolean validCookie = false;
