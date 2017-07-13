@@ -1,5 +1,8 @@
 package io.pivotal.poc.bac.authrouteservice;
 
+import com.ca.siteminder.sdk.agentapi.SmRegHost;
+import com.ca.siteminder.sdk.agentapi.Util;
+import com.netegrity.util.Fips140Mode;
 import netegrity.siteminder.javaagent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,21 +26,47 @@ public class SMService implements InitializingBean {
     private String _policyIp;
     @Value("${sm.agent.hostname}")
     private String _agentHostName;
-    @Value("${sm.agent.sharedSecret}")
-    private String _sharedSecret;
+    @Value("${sm.user}")
+    private String _policyUsername;
+    @Value("${sm.password}")
+    private String _policyPwd;
 
     public void afterPropertiesSet() throws Exception {
+
+        String secret = getSharedSecret();
+        LOG.info("SM Agent hostname: " +  _agentHostName);
+        LOG.info("SM Agent Policy Server IP: " + _policyIp);
+        LOG.info("SM Agent shared secret: " + secret);
+
         ServerDef sd = new ServerDef();
         sd.serverIpAddress = _policyIp;
         sd.connectionMax = 10;
         sd.connectionMin = 1;
         sd.timeout = 10;
-        int result = _api.init(new InitDef( _agentHostName, _sharedSecret, false, sd));
+        int result = _api.init(new InitDef( _agentHostName, secret, false, sd));
         LOG.info("SM Agent initialized: " + _api.toString());
         LOG.info("SM Agent initialization return code: " + result);
-        LOG.info("\tSM Agent hostname: " +  _agentHostName);
-        LOG.info("\tSM Agent Policy Server IP: " + _policyIp);
-        LOG.info("\tSM Agent shared secret: " + _sharedSecret);
+    }
+
+    private String getSharedSecret() {
+        Fips140Mode fipsMode = Fips140Mode.getFips140ModeObject();
+        fipsMode.setMode(Util.resolveSetting());
+
+        String address = _policyIp;
+        String filename = "smhost.conf";
+        String hostname = "_agentHostName";
+        String hostConfig = "hostConfig";
+        String username = _policyUsername;
+        String password = _policyPwd;
+        boolean bRollover = false;
+        boolean bOverwrite = true;
+        SmRegHost reghost = new SmRegHost(address,filename,hostname,hostConfig,username,password,bRollover,bOverwrite);
+        try {
+            reghost.register();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return reghost.getSharedSecret();
     }
 
     public boolean isValid(String authCokie) {
