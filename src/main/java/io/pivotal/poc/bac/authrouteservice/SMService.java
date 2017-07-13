@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Controller;
 
-import java.net.URI;
 
 /**
  * Created by azwickey on 6/28/17.
@@ -64,6 +63,17 @@ public class SMService implements InitializingBean {
         String password = _policyPwd;
         boolean bRollover = false;
         boolean bOverwrite = true;
+
+        LOG.info("*** SM registration values ***");
+        LOG.info("SM registration address: " + address);
+        LOG.info("SM registration filename: " + filename);
+        LOG.info("SM registration hostname: " + hostname);
+        LOG.info("SM registration hostconfig: " + hostconfig);
+        LOG.info("SM registration username: " + username);
+        LOG.info("SM registration password: " + password);
+        LOG.info("SM registration bRollover: " + bRollover);
+        LOG.info("SM registration bOverwrite: " + bOverwrite);
+
         SmRegHost reghost = new SmRegHost(address,filename,hostname,hostconfig,username,password,bRollover,bOverwrite);
         try {
             reghost.register();
