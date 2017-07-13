@@ -8,8 +8,9 @@ logging:
 login:
   url: https://pivotal.io/
 sm:
-  ip: 192.168.1.100
-  user: username
-  password: password
+  ip: vp6.casecurecenter.com
+  user: user
+  password: pwd
   agent:
+    name: spsagent
     hostname: pivotal-cf

@@ -40,8 +40,13 @@ public class RouteServiceController {
     public ResponseEntity<?> service(RequestEntity<byte[]> incoming) {
         LOG.debug("Incoming Request: {}", incoming);
 
+        String target = incoming.getHeaders().getFirst(TARGET_URL);
+        if(target == null) {
+            throw new IllegalStateException(String.format("No %s header present", TARGET_URL));
+        }
+
         String smCookie = null;
-        if(obtainCookie(incoming)) {
+        if(obtainCookie(incoming, target)) {
             LOG.info("Request not authenticated, logging into SiteMinder.");
             RequestEntity<?> cookieReq = getCookieRequest(incoming.getHeaders());
             LOG.debug("Login Cookie Request: {}", cookieReq);
@@ -56,8 +61,8 @@ public class RouteServiceController {
         return _rs.exchange(outgoing, byte[].class);
     }
 
-    private boolean obtainCookie(RequestEntity<byte[]> incoming) {
-        if(_sm.isProtected(incoming.getUrl(), incoming.getMethod())) {
+    private boolean obtainCookie(RequestEntity<byte[]> incoming, String target) {
+        if(_sm.isProtected(target, incoming.getMethod())) {
             LOG.debug("Resource is protected, validating cookie");
             boolean validCookie = false;
             if(incoming.getHeaders().containsKey(AUTH_COOKIE) && _sm.isValid(incoming.getHeaders().getFirst(AUTH_COOKIE))) {

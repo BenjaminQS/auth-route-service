@@ -30,6 +30,8 @@ public class SMService implements InitializingBean {
     private String _policyUsername;
     @Value("${sm.password}")
     private String _policyPwd;
+    @Value("${sm.agent.name}")
+    private String _agent;
 
     public void afterPropertiesSet() throws Exception {
 
@@ -55,23 +57,24 @@ public class SMService implements InitializingBean {
         String address = _policyIp;
         String filename = "smhost.conf";
         String hostname = _agentHostName;
-        String hostConfig = "hostConfig";
+        String hostconfig = "pcf-crc";
         String username = _policyUsername;
         String password = _policyPwd;
         boolean bRollover = false;
         boolean bOverwrite = true;
-        SmRegHost reghost = new SmRegHost(address,filename,hostname,hostConfig,username,password,bRollover,bOverwrite);
+        SmRegHost reghost = new SmRegHost(address,filename,hostname,hostconfig,username,password,bRollover,bOverwrite);
         try {
             reghost.register();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unable to register Siteminder agent: " + ex.getMessage(), ex);
         }
         return reghost.getSharedSecret();
     }
 
-    public boolean isValid(String authCokie) {
-        LOG.debug("Validating cookie [" + authCokie + "]");
-        int rc = _api.decodeSSOToken(authCokie, new TokenDescriptor(0,true), new AttributeList(), false, new StringBuffer());
+    public boolean isValid(String authCookie) {
+        LOG.debug("Validating cookie [" + authCookie + "]");
+        int rc = _api.decodeSSOToken(authCookie, new TokenDescriptor(0,true), new AttributeList(), false, new StringBuffer());
         LOG.debug("Decode return code: "+ rc);
         switch (rc) {
             case AgentAPI.SUCCESS:
@@ -82,13 +85,13 @@ public class SMService implements InitializingBean {
         }
     }
 
-    public boolean isProtected(URI uri, HttpMethod method) {
+    public boolean isProtected(String uri, HttpMethod method) {
         LOG.debug("Checking if URI [" + uri + "] is protected");
         int rc = _api.isProtected(_agentHostName,
                 new ResourceContextDef(
-                    _agentHostName,
+                    _agent,
                     "Cloudfoundry",
-                    uri.getPath(),
+                    uri,
                     method.name()),
                     new RealmDef());
         LOG.debug("IsProtected return code: "+ rc);
