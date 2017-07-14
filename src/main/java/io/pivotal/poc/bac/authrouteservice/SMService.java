@@ -109,8 +109,10 @@ public class SMService implements InitializingBean {
         LOG.debug("IsProtected return code: "+ rc);
         switch (rc) {
             case AgentAPI.YES:
+                LOG.debug("Resource is protected");
                 return true;
             case AgentAPI.NO:
+                LOG.debug("Resource is not protected");
                 return false;
             default: throw new RuntimeException("Error Occurred Checking if resource is protected; ReturnCode: " + rc);
 
