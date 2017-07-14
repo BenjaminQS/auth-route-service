@@ -63,9 +63,12 @@ public class RouteServiceController {
             ResponseEntity<byte[]> cookieResp = _rs.exchange(cookieReq, byte[].class);
             LOG.debug("Login Cookie Response: {}", cookieResp);
             if(cookieResp.getStatusCode() != HttpStatus.OK) {
-                return new ResponseEntity<String>("User Not Authorized", new HttpHeaders(), HttpStatus.FORBIDDEN);
+                LOG.debug("Login Cookie Response code wasn't 200... ignoring");
+                //return new ResponseEntity<String>("User Not Authorized", new HttpHeaders(), HttpStatus.FORBIDDEN);
             }
             cookies = cookieResp.getHeaders().getFirst("Cookie");
+        } else {
+            cookies = cookie;  //this is needed to simply propogate cookies on unprotected requests
         }
 
         RequestEntity<?> outgoing = getOutgoingRequest(incoming, cookies);
