@@ -84,7 +84,7 @@ public class SMService implements InitializingBean {
         return reghost.getSharedSecret();
     }
 
-    public boolean isValid(String authCookie) {
+    public boolean isValid(String authCookie, boolean retry) {
         LOG.debug("Validating cookie [" + authCookie + "]");
         int rc = _api.decodeSSOToken(authCookie, new TokenDescriptor(0,true), new AttributeList(), false, new StringBuffer());
         LOG.debug("Decode return code: "+ rc);
@@ -93,11 +93,17 @@ public class SMService implements InitializingBean {
                 return true;
             case AgentAPI.FAILURE:
                 return false;
-            default: throw new RuntimeException("Error Occurred Checking if decoding cookie; ReturnCode: " + rc);
+            default:
+                if(retry) {
+                    LOG.debug("SM may have timedout... retrying");
+                     try { afterPropertiesSet(); } catch(Exception ex) { ex.printStackTrace(); }
+                    return isValid(authCookie, false);
+                }
+                throw new RuntimeException("Error Occurred Checking if decoding cookie; ReturnCode: " + rc);
         }
     }
 
-    public boolean isProtected(String uri, HttpMethod method) {
+    public boolean isProtected(String uri, HttpMethod method, boolean retry) {
         LOG.debug("Checking if URI [" + uri + "] is protected");
         int rc = _api.isProtected(_agentHostName,
                 new ResourceContextDef(
@@ -114,7 +120,13 @@ public class SMService implements InitializingBean {
             case AgentAPI.NO:
                 LOG.debug("Resource is not protected");
                 return false;
-            default: throw new RuntimeException("Error Occurred Checking if resource is protected; ReturnCode: " + rc);
+            default:
+                if(retry) {
+                    LOG.debug("SM may have timedout... retrying");
+                    try { afterPropertiesSet(); } catch(Exception ex) { ex.printStackTrace(); }
+                    return isProtected(uri, method, false);
+                }
+                throw new RuntimeException("Error Occurred Checking if resource is protected; ReturnCode: " + rc);
 
         }
     }

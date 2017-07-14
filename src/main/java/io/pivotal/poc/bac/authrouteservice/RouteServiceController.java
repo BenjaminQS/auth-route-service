@@ -51,7 +51,7 @@ public class RouteServiceController {
 
         String smCookie = null;
         target = URI.create(target).getPath();
-        if(_sm.isProtected(target, incoming.getMethod()) && !validCookie(incoming, URI.create(target).getPath())) {
+        if(_sm.isProtected(target, incoming.getMethod(), true) && !validCookie(incoming, URI.create(target).getPath())) {
             LOG.info("Request not authenticated, logging into SiteMinder.");
             RequestEntity<?> cookieReq = getCookieRequest(incoming.getHeaders());
             LOG.debug("Login Cookie Request: {}", cookieReq);
@@ -71,7 +71,7 @@ public class RouteServiceController {
 
     private boolean validCookie(RequestEntity<byte[]> incoming, String target) {
         LOG.debug("Resource is protected, validating cookie");
-        if(incoming.getHeaders().containsKey(AUTH_COOKIE) && _sm.isValid(incoming.getHeaders().getFirst(AUTH_COOKIE))) {
+        if(incoming.getHeaders().containsKey(AUTH_COOKIE) && _sm.isValid(incoming.getHeaders().getFirst(AUTH_COOKIE), true)) {
             return true;
         } else {
             return false;
