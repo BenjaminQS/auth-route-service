@@ -1,13 +1,18 @@
 package io.pivotal.poc.bac.authrouteservice;
 
+import com.rsa.cryptoj.c.co;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestOperations;
+import org.springframework.web.client.RestTemplate;
+import sun.net.www.http.HttpClient;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -22,7 +27,7 @@ public class RouteServiceController {
     Logger LOG = LoggerFactory.getLogger(RouteServiceController.class);
 
     public static final String TARGET_URL = "X-CF-Forwarded-Url";
-    public static final String AUTH_COOKIE = "SM_SESSION";
+    public static final String AUTH_COOKIE = "SMSESSION";
 
     @Value("${login.url:https://pivotal.io/}")
     private String _loginTarget;
@@ -36,12 +41,12 @@ public class RouteServiceController {
     @RequestMapping("cookie")
     public HttpEntity<String> fakeCookie(RequestEntity<byte[]> incoming) {
         HttpHeaders responseHeaders = new HttpHeaders();
-        responseHeaders.set(AUTH_COOKIE, "FakeCookie");
+        responseHeaders.set("Cookie", "SMSESSION=FakeSessionCookie");
         return new HttpEntity<String>("Hello World", responseHeaders);
     }
 
     @RequestMapping("auth")
-    public ResponseEntity<?> service(RequestEntity<byte[]> incoming) {
+    public ResponseEntity<?> service(@CookieValue(value=AUTH_COOKIE, required = false) String cookie, RequestEntity<byte[]> incoming) {
         LOG.debug("Incoming Request: {}", incoming);
 
         String target = incoming.getHeaders().getFirst(TARGET_URL);
@@ -49,9 +54,9 @@ public class RouteServiceController {
             throw new IllegalStateException(String.format("No %s header present", TARGET_URL));
         }
 
-        String smCookie = null;
         target = URI.create(target).getPath();
-        if(_sm.isProtected(target, incoming.getMethod(), true) && !validCookie(incoming, URI.create(target).getPath())) {
+        String cookies = null;
+        if(_sm.isProtected(target, incoming.getMethod(), true) && !validCookie(cookie, URI.create(target).getPath())) {
             LOG.info("Request not authenticated, logging into SiteMinder.");
             RequestEntity<?> cookieReq = getCookieRequest(incoming.getHeaders());
             LOG.debug("Login Cookie Request: {}", cookieReq);
@@ -60,18 +65,18 @@ public class RouteServiceController {
             if(cookieResp.getStatusCode() != HttpStatus.OK) {
                 return new ResponseEntity<String>("User Not Authorized", new HttpHeaders(), HttpStatus.FORBIDDEN);
             }
-            smCookie = cookieResp.getHeaders().getFirst(AUTH_COOKIE);
+            cookies = cookieResp.getHeaders().getFirst("Cookie");
         }
 
-        RequestEntity<?> outgoing = getOutgoingRequest(incoming, smCookie);
+        RequestEntity<?> outgoing = getOutgoingRequest(incoming, cookies);
         LOG.debug("Outgoing Request: {}", outgoing);
 
         return _rs.exchange(outgoing, byte[].class);
     }
 
-    private boolean validCookie(RequestEntity<byte[]> incoming, String target) {
-        LOG.debug("Resource is protected, validating cookie");
-        if(incoming.getHeaders().containsKey(AUTH_COOKIE) && _sm.isValid(incoming.getHeaders().getFirst(AUTH_COOKIE), true)) {
+    private boolean validCookie(String cookie, String target) {
+        LOG.debug("Resource is protected, validating cookie: " + cookie);
+        if(cookie != null && _sm.isValid(cookie, true)) {
             return true;
         } else {
             return false;
@@ -81,7 +86,7 @@ public class RouteServiceController {
     private RequestEntity<?> getOutgoingRequest(RequestEntity<byte[]> incoming, String authCookie) {
         HttpHeaders headers = new HttpHeaders();
         headers.putAll(incoming.getHeaders());
-        headers.put(AUTH_COOKIE, Arrays.asList(authCookie));
+        headers.put("Cookie", Arrays.asList(authCookie));
 
         List<String> targets = headers.remove(TARGET_URL);
         if(targets == null || targets.isEmpty()) {
