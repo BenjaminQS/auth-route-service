@@ -1,18 +1,14 @@
 package io.pivotal.poc.bac.authrouteservice;
 
-import com.rsa.cryptoj.c.co;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestOperations;
-import org.springframework.web.client.RestTemplate;
-import sun.net.www.http.HttpClient;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -57,18 +53,23 @@ public class RouteServiceController {
         target = URI.create(target).getPath();
         String cookies = null;
         if(_sm.isProtected(target, incoming.getMethod(), true) && !validCookie(cookie, URI.create(target).getPath())) {
-            LOG.info("Request not authenticated, logging into SiteMinder.");
-            RequestEntity<?> cookieReq = getCookieRequest(incoming.getHeaders());
-            LOG.debug("Login Cookie Request: {}", cookieReq);
-            ResponseEntity<byte[]> cookieResp = _rs.exchange(cookieReq, byte[].class);
-            LOG.debug("Login Cookie Response: {}", cookieResp);
-            if(cookieResp.getStatusCode() != HttpStatus.OK) {
-                LOG.debug("Login Cookie Response code wasn't 200... ignoring");
-                //return new ResponseEntity<String>("User Not Authorized", new HttpHeaders(), HttpStatus.FORBIDDEN);
-            }
-            cookies = cookieResp.getHeaders().getFirst("Cookie");
+//            LOG.info("Request not authenticated, logging into SiteMinder.");
+//            RequestEntity<?> cookieReq = getCookieRequest(incoming.getHeaders());
+//            LOG.debug("Login Cookie Request: {}", cookieReq);
+//            ResponseEntity<byte[]> cookieResp = _rs.exchange(cookieReq, byte[].class);
+//            LOG.debug("Login Cookie Response: {}", cookieResp);
+//            if(cookieResp.getStatusCode() != HttpStatus.OK) {
+//                LOG.debug("Login Cookie Response code wasn't 200... ignoring");
+//                //return new ResponseEntity<String>("User Not Authorized", new HttpHeaders(), HttpStatus.FORBIDDEN);
+//            }
+//            cookies = cookieResp.getHeaders().getFirst("Cookie");
+            LOG.info("Request not authenticated returning 302.");
+            HttpHeaders responseHeaders = new HttpHeaders();
+            responseHeaders.putAll(incoming.getHeaders());
+            responseHeaders.setLocation(URI.create(_loginTarget));
+            return new ResponseEntity<byte[]>(responseHeaders, HttpStatus.TEMPORARY_REDIRECT);
         } else {
-            cookies = cookie;  //this is needed to simply propogate cookies on unprotected requests
+            cookies = incoming.getHeaders().getFirst("Cookie");  //this is needed to simply propogate all cookies on unprotected requests
         }
 
         RequestEntity<?> outgoing = getOutgoingRequest(incoming, cookies);
@@ -78,10 +79,12 @@ public class RouteServiceController {
     }
 
     private boolean validCookie(String cookie, String target) {
-        LOG.debug("Resource is protected, validating cookie: " + cookie);
+        LOG.debug("Validating cookie: " + cookie);
         if(cookie != null && _sm.isValid(cookie, true)) {
+            LOG.debug("Valid cookie");
             return true;
         } else {
+            LOG.debug("Invalidating cookie");
             return false;
         }
     }
